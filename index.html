@@ -25,11 +25,6 @@
         .pixel-btn { border: 3px solid #1f2937; background-color: white; box-shadow: 3px 3px 0px #1f2937; transition: all 0.1s; }
         .pixel-btn:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px #1f2937; }
         .pixel-screen { background-color: #c2d5aa; border: inset 4px #9ca3af; color: #111827; }
-        
-        /* 自定义复选框样式 */
-        .custom-checkbox { width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 2px solid #cbd5e1; appearance: none; outline: none; cursor: pointer; transition: all 0.2s; position: relative; }
-        .custom-checkbox:checked { background-color: #f43f5e; border-color: #f43f5e; }
-        .custom-checkbox:checked::after { content: ''; position: absolute; left: 6px; top: 2px; width: 6px; height: 12px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
     </style>
 </head>
 <body class="h-screen w-screen overflow-hidden font-sans selection:bg-primary selection:text-white">
@@ -52,11 +47,7 @@
             <button @click="isMenuOpen = true" class="p-2 -ml-2 text-gray-600 hover:text-primary transition-colors active:scale-95">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="15" y2="18"></line></svg>
             </button>
-            <h1 class="ml-3 text-base font-semibold tracking-wide text-gray-800 flex-1">{{ tabs[currentTab].title }}</h1>
-            
-            <button v-if="currentTab === 'memory'" @click="toggleManageMode" class="text-sm font-bold transition-colors" :class="isManageMode ? 'text-primary' : 'text-gray-500'">
-                {{ isManageMode ? '完成' : '⚙️ 管理' }}
-            </button>
+            <h1 class="ml-3 text-base font-semibold tracking-wide text-gray-800">{{ tabs[currentTab].title }}</h1>
         </header>
 
         <transition name="fade">
@@ -99,61 +90,61 @@
                     </div>
                 </div>
 
-                <div v-else-if="currentTab === 'memory'" class="h-full flex flex-col absolute inset-0 pb-safe relative">
-                    <div class="px-4 pt-3 pb-2 bg-white/60 backdrop-blur-md shadow-sm shrink-0 z-10 transition-all">
-                        <div class="flex justify-between items-center mb-2" v-if="isManageMode">
-                            <span class="text-xs font-bold text-gray-600">批量管理模式</span>
-                            <button @click="autoSelectDuplicates" class="text-xs font-bold text-white bg-blue-500 px-3 py-1.5 rounded-full shadow-sm flex items-center hover:bg-blue-600 transition-colors active:scale-95">
-                                🔍 智能查重
-                            </button>
-                        </div>
-                        <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide" v-else>
+                <div v-else-if="currentTab === 'memory'" class="h-full flex flex-col absolute inset-0 pb-safe">
+                    <div class="px-4 pt-3 pb-2 bg-white/60 backdrop-blur-md shadow-sm shrink-0 z-10 flex justify-between items-center transition-all">
+                        <div class="flex space-x-2 overflow-x-auto pb-1 scrollbar-hide flex-1">
                             <button v-for="cat in ['全部', '情感', '记事', '灵感', '流水', '画像']" @click="filterCat = cat"
                                 :class="filterCat === cat ? 'bg-primary text-white' : 'bg-white text-gray-500 border border-gray-100'"
                                 class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-sm transition-colors">{{ cat }}</button>
                         </div>
-                        <div class="flex justify-between items-center mt-1">
-                            <select v-model="filterTime" class="bg-transparent text-xs text-gray-600 font-medium outline-none" :disabled="isManageMode">
-                                <option value="all">全部时间</option>
-                                <option value="week">最近一周</option>
-                                <option value="month">最近一月</option>
-                            </select>
-                            <span class="text-xs text-gray-400 font-medium">共 {{ filteredMemories.length }} 条</span>
-                        </div>
+                        <button @click="toggleManage" class="ml-3 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all"
+                                :class="isManageMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border border-gray-200'">
+                            {{ isManageMode ? '退出管理' : '⚙️ 管理' }}
+                        </button>
+                    </div>
+                    
+                    <div v-if="!isManageMode" class="px-4 pb-2 pt-1 flex justify-between items-center bg-white/60 backdrop-blur-md z-10 shrink-0">
+                        <select v-model="filterTime" class="bg-transparent text-xs text-gray-600 font-medium outline-none">
+                            <option value="all">全部时间</option>
+                            <option value="week">最近一周</option>
+                            <option value="month">最近一月</option>
+                        </select>
+                        <span class="text-xs text-gray-400 font-medium">共 {{ filteredMemories.length }} 条</span>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4" :class="{'pb-20': isManageMode}">
-                        <div v-if="filteredMemories.length === 0" class="text-center text-gray-400 mt-10 text-sm">暂无符合条件的记忆哦~</div>
+                    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4" :class="{'pb-24': isManageMode}">
+                        <div v-if="filteredMemories.length === 0" class="text-center text-gray-400 mt-10 text-sm">空空如也~</div>
                         
-                        <div v-for="mem in filteredMemories" :key="mem.id" @click="toggleSelection(mem.id)" 
-                             class="bg-white/80 p-4 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border transition-all flex items-center"
-                             :class="[isManageMode ? 'cursor-pointer hover:bg-gray-50' : '', (isManageMode && selectedMemoryIds.includes(mem.id)) ? 'border-primary bg-red-50' : 'border-white']">
+                        <div v-for="mem in filteredMemories" :key="mem.id" 
+                             @click="isManageMode ? toggleSelect(mem.id) : null"
+                             class="bg-white/80 p-4 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] relative transition-all duration-200"
+                             :class="[isManageMode ? 'cursor-pointer' : '', isManageMode && selectedIds.includes(mem.id) ? 'border-2 border-primary ring-4 ring-primary/10 bg-pink-50' : 'border border-white']">
                             
-                            <div v-if="isManageMode" class="mr-4 shrink-0">
-                                <input type="checkbox" class="custom-checkbox pointer-events-none" :checked="selectedMemoryIds.includes(mem.id)">
-                            </div>
-                            
-                            <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-center mb-2">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-lg">{{ mem.category || '未分类' }}</span>
-                                        <span v-if="mem._isDuplicate" class="text-[10px] font-bold text-red-500 px-2 py-0.5 border border-red-200 rounded-lg bg-white">🤖 建议清理</span>
-                                    </div>
-                                    <span class="text-[10px] text-gray-400 shrink-0 ml-2">{{ formatTime(mem.created_at) }}</span>
+                            <div v-if="isManageMode" class="absolute right-4 top-4">
+                                <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+                                     :class="selectedIds.includes(mem.id) ? 'bg-primary border-primary' : 'border-gray-300 bg-white'">
+                                    <svg v-if="selectedIds.includes(mem.id)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
-                                <h3 class="font-bold text-gray-800 text-[15px] mb-1.5 truncate">{{ mem.title }}</h3>
-                                <p class="text-[13px] text-gray-600 leading-relaxed line-clamp-3">{{ mem.content }}</p>
                             </div>
+
+                            <div class="flex justify-between items-center mb-2 pr-6">
+                                <span class="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-lg">{{ mem.category || '未分类' }}</span>
+                                <span class="text-[10px] text-gray-400">{{ formatTime(mem.created_at) }}</span>
+                            </div>
+                            <h3 class="font-bold text-gray-800 text-[15px] mb-1.5">{{ mem.title }}</h3>
+                            <p class="text-[13px] text-gray-600 leading-relaxed">{{ mem.content }}</p>
                         </div>
                     </div>
 
                     <transition name="fade">
-                        <div v-if="isManageMode" class="absolute bottom-0 left-0 w-full bg-white border-t border-gray-100 p-4 pb-safe flex justify-between items-center z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] rounded-t-3xl">
-                            <button @click="toggleManageMode" class="px-5 py-2.5 rounded-xl text-gray-500 font-bold bg-gray-100 hover:bg-gray-200 transition-colors">取消</button>
-                            <button @click="deleteSelected" :disabled="selectedMemoryIds.length === 0" 
-                                class="px-5 py-2.5 rounded-xl font-bold transition-all shadow-md flex items-center"
-                                :class="selectedMemoryIds.length > 0 ? 'bg-primary text-white active:scale-95' : 'bg-gray-300 text-gray-100 cursor-not-allowed'">
-                                🗑️ 删除所选 <span class="ml-1 bg-white/20 px-2 rounded-md">{{ selectedMemoryIds.length }}</span>
+                        <div v-if="isManageMode" class="absolute bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-gray-100 p-4 pb-safe z-30 flex justify-between items-center space-x-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)]">
+                            <button @click="scanDuplicates" class="flex-1 bg-blue-50 text-blue-600 font-bold py-3 rounded-2xl active:scale-95 transition-transform flex items-center justify-center border border-blue-100">
+                                <span>🔍 智能查重</span>
+                            </button>
+                            <button @click="deleteSelected" :disabled="selectedIds.length === 0" 
+                                    class="flex-1 font-bold py-3 rounded-2xl transition-all flex items-center justify-center"
+                                    :class="selectedIds.length > 0 ? 'bg-red-500 text-white active:scale-95 shadow-md shadow-red-200' : 'bg-gray-100 text-gray-400'">
+                                <span>🗑️ 清除 ({{ selectedIds.length }})</span>
                             </button>
                         </div>
                     </transition>
@@ -243,7 +234,7 @@
             // --- 宠物模块 ---
             const petStatusMsg = ref('>>> SYSTEM BOOTING...\n>>> WAITING FOR CONNECTION...')
             const interactPet = async (actionStr) => {
-                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
                 petStatusMsg.value = `>>> EXECUTING [${actionStr.toUpperCase()}]...\n>>> PLEASE WAIT...`
                 try {
                     const res = await fetch(`${API_BASE_URL}/api/pet`, {
@@ -255,23 +246,19 @@
                 } catch (e) { petStatusMsg.value = '>>> ERR: CONNECTION FAILED' }
             }
 
-            // --- 记忆库模块与去重管理 ---
+            // --- 记忆管理模块 ---
             const memoryList = ref([])
             const filterCat = ref('全部')
-            const filterTime = ref('all')
+            const filterTime = ref('all') 
             
             // 管理模式状态
             const isManageMode = ref(false)
-            const selectedMemoryIds = ref([])
+            const selectedIds = ref([])
 
             const loadMemories = async () => {
                 try {
                     const res = await fetch(`${API_BASE_URL}/api/memories/all`, { headers: { 'Authorization': `Bearer ${apiSecret.value}` } })
-                    if (res.ok) {
-                        const data = await res.json()
-                        // 初始化时清除高亮标记
-                        memoryList.value = data.map(m => ({...m, _isDuplicate: false}))
-                    }
+                    if (res.ok) memoryList.value = await res.json()
                 } catch (e) { console.error(e) }
             }
 
@@ -294,100 +281,91 @@
                 return `${d.getMonth()+1}-${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`
             }
 
-            // 开关管理模式
-            const toggleManageMode = () => {
-                isManageMode.value = !isManageMode.value
-                if (!isManageMode.value) {
-                    selectedMemoryIds.value = [] // 退出时清空选择
-                    memoryList.value.forEach(m => m._isDuplicate = false) // 清楚查重标签
-                }
+            const toggleManage = () => {
+                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+                isManageMode.value = !isManageMode.value;
+                if (!isManageMode.value) selectedIds.value = [];
             }
 
-            // 手动单选
-            const toggleSelection = (id) => {
-                if (!isManageMode.value) return
-                const idx = selectedMemoryIds.value.indexOf(id)
-                if (idx > -1) selectedMemoryIds.value.splice(idx, 1)
-                else selectedMemoryIds.value.push(id)
+            const toggleSelect = (id) => {
+                if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+                const idx = selectedIds.value.indexOf(id);
+                if (idx > -1) selectedIds.value.splice(idx, 1);
+                else selectedIds.value.push(id);
             }
 
-            // 文本相似度计算引擎 (Bigram Jaccard)
+            // 文本相似度算法 (Dice系数，适合中文短文本)
             const getBigrams = (str) => {
-                const bigrams = new Set();
-                for (let i = 0; i < str.length - 1; i++) bigrams.add(str.substring(i, i + 2));
-                return bigrams;
+                const bg = new Set();
+                for(let i=0; i<str.length-1; i++) bg.add(str.slice(i, i+2));
+                return bg;
             }
-            const calculateSimilarity = (s1, s2) => {
-                if (s1 === s2) return 1;
-                if (s1.length < 2 || s2.length < 2) return s1 === s2 ? 1 : 0;
-                const bg1 = getBigrams(s1), bg2 = getBigrams(s2);
+            const calcSim = (s1, s2) => {
+                if(s1 === s2) return 1;
+                if(s1.length < 2 || s2.length < 2) return s1===s2 ? 1 : 0;
+                let bg1 = getBigrams(s1), bg2 = getBigrams(s2);
                 let intersection = 0;
-                for (let bg of bg1) if (bg2.has(bg)) intersection++;
-                return intersection / (bg1.size + bg2.size - intersection);
+                for (let bg of bg1) { if (bg2.has(bg)) intersection++; }
+                return (2.0 * intersection) / (bg1.size + bg2.size);
             }
 
-            // 一键智能查重
-            const autoSelectDuplicates = () => {
-                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-                selectedMemoryIds.value = [];
-                const toDelete = new Set();
-                const mems = memoryList.value; // 数据默认是由新到旧排序的
-                
-                // 清理旧标记
-                mems.forEach(m => m._isDuplicate = false);
+            // 智能查重核心逻辑
+            const scanDuplicates = () => {
+                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+                let toDelete = new Set();
+                // 确保按时间降序排列 (新的在前，旧的在后)
+                let mems = [...filteredMemories.value].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
-                for (let i = 0; i < mems.length; i++) {
-                    if (toDelete.has(mems[i].id)) continue;
-                    for (let j = i + 1; j < mems.length; j++) {
-                        if (toDelete.has(mems[j].id) || mems[i].category !== mems[j].category) continue;
-                        
-                        // 相似度阈值 75%
-                        const sim = calculateSimilarity(mems[i].content || '', mems[j].content || '');
-                        if (sim > 0.75) {
-                            toDelete.add(mems[j].id); // 数组靠后的较旧，标记旧的删除
-                            mems[j]._isDuplicate = true; // UI 红标高亮
+                for(let i=0; i<mems.length; i++) {
+                    if(toDelete.has(mems[i].id)) continue; 
+                    for(let j=i+1; j<mems.length; j++) {
+                        if(toDelete.has(mems[j].id)) continue;
+                        let sim = calcSim(mems[i].content || '', mems[j].content || '');
+                        // 相似度 > 80% 即判定为冗余重复
+                        if(sim > 0.8) {
+                            toDelete.add(mems[j].id); // 自动标记较旧的一条
                         }
                     }
                 }
                 
-                selectedMemoryIds.value = Array.from(toDelete);
-                
-                if (toDelete.size === 0) {
-                    if (tg.showAlert) tg.showAlert('没有发现高度相似的冗余记忆哦~');
-                    else alert('没有发现高度相似的冗余记忆哦~');
+                selectedIds.value = Array.from(toDelete);
+                if(selectedIds.value.length > 0) {
+                    if(tg.showAlert) tg.showAlert(`扫描完毕！在当前列表中发现 ${selectedIds.value.length} 条高度相似的冗余旧记忆，已为您自动勾选。请核对后清除。`);
+                    else alert(`扫描完毕！发现 ${selectedIds.value.length} 条重复旧记忆。`);
                 } else {
-                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                    if(tg.showAlert) tg.showAlert('扫描完毕！当前列表中没有发现相似冗余内容。');
+                    else alert('没有发现重复冗余内容哦。');
                 }
             }
 
-            // 执行物理删除
-            const deleteSelected = async () => {
-                if (selectedMemoryIds.value.length === 0) return;
+            // 删除执行逻辑
+            const deleteSelected = () => {
+                if(selectedIds.value.length === 0) return;
                 
-                const confirmMsg = `确定要彻底删除这 ${selectedMemoryIds.value.length} 条记忆吗？此操作无法恢复。`;
-                
-                // 兼容 TG 原生弹窗与普通 Web 弹窗
                 const executeDelete = async () => {
                     try {
+                        if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
                         const res = await fetch(`${API_BASE_URL}/api/memories/delete`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiSecret.value}` },
-                            body: JSON.stringify({ ids: selectedMemoryIds.value })
+                            body: JSON.stringify({ ids: selectedIds.value })
                         });
-                        if (res.ok) {
-                            toggleManageMode(); // 退出管理模式
-                            loadMemories(); // 刷新列表
-                            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                        if(res.ok) {
+                            selectedIds.value = [];
+                            isManageMode.value = false;
+                            loadMemories(); // 重新拉取最新数据
                         }
-                    } catch (e) {
-                        console.error('删除失败', e);
+                    } catch(e) {
+                        if(tg.showAlert) tg.showAlert('网络请求失败，请稍后再试。');
                     }
-                };
+                }
 
-                if (tg.showConfirm) {
-                    tg.showConfirm(confirmMsg, (sure) => { if (sure) executeDelete(); });
+                if(tg.showConfirm) {
+                    tg.showConfirm(`危险操作：确定要永久清除这 ${selectedIds.value.length} 条记忆吗？`, (confirmed) => {
+                        if(confirmed) executeDelete();
+                    });
                 } else {
-                    if (confirm(confirmMsg)) executeDelete();
+                    if(confirm(`危险操作：确定要永久清除这 ${selectedIds.value.length} 条记忆吗？`)) executeDelete();
                 }
             }
 
@@ -401,11 +379,6 @@
             }
 
             const switchTab = (key) => {
-                // 如果正在管理模式，阻止切换并给提示
-                if (isManageMode.value) {
-                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
-                    return;
-                }
                 currentTab.value = key; setTimeout(() => { isMenuOpen.value = false }, 50)
                 if (key === 'memory' && memoryList.value.length === 0) loadMemories()
                 if (key === 'dashboard') loadDashData()
@@ -418,7 +391,7 @@
                 isAuthenticated, inputSecret, verifySecret,
                 currentTab, isMenuOpen, tabs, switchTab,
                 memoryList, filterCat, filterTime, filteredMemories, formatTime,
-                isManageMode, selectedMemoryIds, toggleManageMode, toggleSelection, autoSelectDuplicates, deleteSelected,
+                isManageMode, selectedIds, toggleManage, toggleSelect, scanDuplicates, deleteSelected,
                 interactPet, petStatusMsg, dashData
             }
         }
