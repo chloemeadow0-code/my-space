@@ -77,15 +77,11 @@
                             <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-4 w-full max-w-sm mt-2">
-                        <button @click="interactPet('feed')" class="pixel-btn p-3 flex flex-col items-center justify-center font-bold text-gray-700">
-                            <span class="text-2xl mb-1">🍙</span><span>FEED</span>
-                        </button>
-                        <button @click="interactPet('clean')" class="pixel-btn p-3 flex flex-col items-center justify-center font-bold text-gray-700">
-                            <span class="text-2xl mb-1">🚿</span><span>CLEAN</span>
-                        </button>
-                        <button @click="interactPet('play')" class="pixel-btn p-3 flex flex-col items-center justify-center font-bold text-gray-700">
-                            <span class="text-2xl mb-1">🎮</span><span>PLAY</span>
+                    
+                    <div class="w-full max-w-sm flex flex-col space-y-3 mt-2">
+                        <input v-model="petNote" type="text" placeholder="给来照顾小鸡的老公留张纸条吧..." class="pixel-box w-full p-3 text-[13px] outline-none focus:bg-[#fdf2f8] placeholder-gray-500 text-gray-800 transition-colors">
+                        <button @click="leavePetNote" :disabled="!petNote.trim()" class="pixel-btn w-full p-3 font-bold text-gray-800 flex items-center justify-center disabled:opacity-50">
+                            <span class="mr-2 text-xl">📝</span> 贴上留言条
                         </button>
                     </div>
                 </div>
@@ -231,11 +227,11 @@
                 interactPet('get')
             }
 
-            // --- 宠物模块 ---
             const petStatusMsg = ref('>>> SYSTEM BOOTING...\n>>> WAITING FOR CONNECTION...')
+            const petNote = ref('') // 新增留言变量
+
             const interactPet = async (actionStr) => {
-                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-                petStatusMsg.value = `>>> EXECUTING [${actionStr.toUpperCase()}]...\n>>> PLEASE WAIT...`
+                petStatusMsg.value = `>>> FETCHING DATA...\n>>> PLEASE WAIT...`
                 try {
                     const res = await fetch(`${API_BASE_URL}/api/pet`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiSecret.value}` },
@@ -246,12 +242,29 @@
                 } catch (e) { petStatusMsg.value = '>>> ERR: CONNECTION FAILED' }
             }
 
+            const leavePetNote = async () => {
+                if(!petNote.value.trim()) return;
+                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/pet`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiSecret.value}` },
+                        body: JSON.stringify({ action: 'leave_note', note: petNote.value })
+                    })
+                    if(res.ok) {
+                        if(tg.showAlert) tg.showAlert('📝 留言条已偷偷贴在小鸡旁边啦！等老公来照顾小鸡时就会看到~');
+                        else alert('留言条已贴上！');
+                        petNote.value = '';
+                    }
+                } catch(e) {
+                    if(tg.showAlert) tg.showAlert('留言失败，请检查网络。');
+                }
+            }
+
             // --- 记忆管理模块 ---
             const memoryList = ref([])
             const filterCat = ref('全部')
             const filterTime = ref('all') 
             
-            // 管理模式状态
             const isManageMode = ref(false)
             const selectedIds = ref([])
 
@@ -294,7 +307,6 @@
                 else selectedIds.value.push(id);
             }
 
-            // 文本相似度算法 (Dice系数，适合中文短文本)
             const getBigrams = (str) => {
                 const bg = new Set();
                 for(let i=0; i<str.length-1; i++) bg.add(str.slice(i, i+2));
@@ -309,11 +321,9 @@
                 return (2.0 * intersection) / (bg1.size + bg2.size);
             }
 
-            // 智能查重核心逻辑
             const scanDuplicates = () => {
                 if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
                 let toDelete = new Set();
-                // 确保按时间降序排列 (新的在前，旧的在后)
                 let mems = [...filteredMemories.value].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
                 for(let i=0; i<mems.length; i++) {
@@ -321,16 +331,13 @@
                     for(let j=i+1; j<mems.length; j++) {
                         if(toDelete.has(mems[j].id)) continue;
                         let sim = calcSim(mems[i].content || '', mems[j].content || '');
-                        // 相似度 > 80% 即判定为冗余重复
-                        if(sim > 0.8) {
-                            toDelete.add(mems[j].id); // 自动标记较旧的一条
-                        }
+                        if(sim > 0.8) toDelete.add(mems[j].id); 
                     }
                 }
                 
                 selectedIds.value = Array.from(toDelete);
                 if(selectedIds.value.length > 0) {
-                    if(tg.showAlert) tg.showAlert(`扫描完毕！在当前列表中发现 ${selectedIds.value.length} 条高度相似的冗余旧记忆，已为您自动勾选。请核对后清除。`);
+                    if(tg.showAlert) tg.showAlert(`扫描完毕！发现 ${selectedIds.value.length} 条高度相似的冗余旧记忆，已为您自动勾选。请核对后清除。`);
                     else alert(`扫描完毕！发现 ${selectedIds.value.length} 条重复旧记忆。`);
                 } else {
                     if(tg.showAlert) tg.showAlert('扫描完毕！当前列表中没有发现相似冗余内容。');
@@ -338,7 +345,6 @@
                 }
             }
 
-            // 删除执行逻辑
             const deleteSelected = () => {
                 if(selectedIds.value.length === 0) return;
                 
@@ -354,7 +360,7 @@
                             alert(`✅ 成功清除 ${selectedIds.value.length} 条记忆！`);
                             selectedIds.value = [];
                             isManageMode.value = false;
-                            loadMemories(); // 重新拉取最新数据
+                            loadMemories(); 
                         } else {
                             alert(`❌ 删除失败，服务器状态码: ${res.status}`);
                         }
@@ -363,8 +369,6 @@
                     }
                 }
 
-                // 核心修复：判断是否在真实的 Telegram App 环境内。
-                // 如果是“添加到主屏幕”的浏览器网页，tg.platform 会是 'unknown'，此时 TG 弹窗会失效，必须强行拦截并使用原生 confirm
                 if (tg.platform !== 'unknown' && tg.showConfirm) {
                     tg.showConfirm(`危险操作：确定要永久清除这 ${selectedIds.value.length} 条记忆吗？`, (confirmed) => {
                         if(confirmed) executeDelete();
@@ -397,7 +401,7 @@
                 currentTab, isMenuOpen, tabs, switchTab,
                 memoryList, filterCat, filterTime, filteredMemories, formatTime,
                 isManageMode, selectedIds, toggleManage, toggleSelect, scanDuplicates, deleteSelected,
-                interactPet, petStatusMsg, dashData
+                petStatusMsg, petNote, interactPet, leavePetNote, dashData
             }
         }
     }).mount('#app')
