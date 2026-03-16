@@ -20,28 +20,16 @@
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         body { background-color: var(--tg-theme-bg-color, #fff1f2); color: var(--tg-theme-text-color, #1f2937); }
         
-        /* 像素风游戏 UI 专属样式 */
         .pixel-font { font-family: 'DotGothic16', monospace; }
-        .pixel-box {
-            border: 4px solid #374151; /* 深灰硬边框 */
-            box-shadow: 4px 4px 0px #9ca3af;
-            background-color: #f3f4f6;
-        }
-        .pixel-btn {
-            border: 3px solid #1f2937;
-            background-color: white;
-            box-shadow: 3px 3px 0px #1f2937;
-            transition: all 0.1s;
-        }
-        .pixel-btn:active {
-            transform: translate(3px, 3px);
-            box-shadow: 0px 0px 0px #1f2937;
-        }
-        .pixel-screen {
-            background-color: #c2d5aa; /* 复古 Gameboy 屏幕绿 */
-            border: inset 4px #9ca3af;
-            color: #111827;
-        }
+        .pixel-box { border: 4px solid #374151; box-shadow: 4px 4px 0px #9ca3af; background-color: #f3f4f6; }
+        .pixel-btn { border: 3px solid #1f2937; background-color: white; box-shadow: 3px 3px 0px #1f2937; transition: all 0.1s; }
+        .pixel-btn:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px #1f2937; }
+        .pixel-screen { background-color: #c2d5aa; border: inset 4px #9ca3af; color: #111827; }
+        
+        /* 自定义复选框样式 */
+        .custom-checkbox { width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 2px solid #cbd5e1; appearance: none; outline: none; cursor: pointer; transition: all 0.2s; position: relative; }
+        .custom-checkbox:checked { background-color: #f43f5e; border-color: #f43f5e; }
+        .custom-checkbox:checked::after { content: ''; position: absolute; left: 6px; top: 2px; width: 6px; height: 12px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
     </style>
 </head>
 <body class="h-screen w-screen overflow-hidden font-sans selection:bg-primary selection:text-white">
@@ -64,7 +52,11 @@
             <button @click="isMenuOpen = true" class="p-2 -ml-2 text-gray-600 hover:text-primary transition-colors active:scale-95">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="15" y2="18"></line></svg>
             </button>
-            <h1 class="ml-3 text-base font-semibold tracking-wide text-gray-800">{{ tabs[currentTab].title }}</h1>
+            <h1 class="ml-3 text-base font-semibold tracking-wide text-gray-800 flex-1">{{ tabs[currentTab].title }}</h1>
+            
+            <button v-if="currentTab === 'memory'" @click="toggleManageMode" class="text-sm font-bold transition-colors" :class="isManageMode ? 'text-primary' : 'text-gray-500'">
+                {{ isManageMode ? '完成' : '⚙️ 管理' }}
+            </button>
         </header>
 
         <transition name="fade">
@@ -84,7 +76,6 @@
             <transition name="fade" mode="out-in">
 
                 <div v-if="currentTab === 'pet'" class="h-full flex flex-col items-center justify-center absolute inset-0 p-5 pb-safe pixel-font bg-[#ffe4e6]">
-                    
                     <div class="w-full max-w-sm pixel-box pixel-screen p-4 mb-6 relative">
                         <div class="text-center text-4xl mb-4 mt-2">🐣</div>
                         <div class="h-24 overflow-y-auto text-sm leading-relaxed border-t-2 border-dashed border-gray-500 pt-2">
@@ -95,7 +86,6 @@
                             <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
                         </div>
                     </div>
-                    
                     <div class="grid grid-cols-3 gap-4 w-full max-w-sm mt-2">
                         <button @click="interactPet('feed')" class="pixel-btn p-3 flex flex-col items-center justify-center font-bold text-gray-700">
                             <span class="text-2xl mb-1">🍙</span><span>FEED</span>
@@ -109,15 +99,21 @@
                     </div>
                 </div>
 
-                <div v-else-if="currentTab === 'memory'" class="h-full flex flex-col absolute inset-0 pb-safe">
-                    <div class="px-4 pt-3 pb-2 bg-white/60 backdrop-blur-md shadow-sm shrink-0 z-10">
-                        <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+                <div v-else-if="currentTab === 'memory'" class="h-full flex flex-col absolute inset-0 pb-safe relative">
+                    <div class="px-4 pt-3 pb-2 bg-white/60 backdrop-blur-md shadow-sm shrink-0 z-10 transition-all">
+                        <div class="flex justify-between items-center mb-2" v-if="isManageMode">
+                            <span class="text-xs font-bold text-gray-600">批量管理模式</span>
+                            <button @click="autoSelectDuplicates" class="text-xs font-bold text-white bg-blue-500 px-3 py-1.5 rounded-full shadow-sm flex items-center hover:bg-blue-600 transition-colors active:scale-95">
+                                🔍 智能查重
+                            </button>
+                        </div>
+                        <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide" v-else>
                             <button v-for="cat in ['全部', '情感', '记事', '灵感', '流水', '画像']" @click="filterCat = cat"
                                 :class="filterCat === cat ? 'bg-primary text-white' : 'bg-white text-gray-500 border border-gray-100'"
                                 class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-sm transition-colors">{{ cat }}</button>
                         </div>
                         <div class="flex justify-between items-center mt-1">
-                            <select v-model="filterTime" class="bg-transparent text-xs text-gray-600 font-medium outline-none">
+                            <select v-model="filterTime" class="bg-transparent text-xs text-gray-600 font-medium outline-none" :disabled="isManageMode">
                                 <option value="all">全部时间</option>
                                 <option value="week">最近一周</option>
                                 <option value="month">最近一月</option>
@@ -126,17 +122,41 @@
                         </div>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4" :class="{'pb-20': isManageMode}">
                         <div v-if="filteredMemories.length === 0" class="text-center text-gray-400 mt-10 text-sm">暂无符合条件的记忆哦~</div>
-                        <div v-for="mem in filteredMemories" :key="mem.id" class="bg-white/80 p-4 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-white">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-lg">{{ mem.category || '未分类' }}</span>
-                                <span class="text-[10px] text-gray-400">{{ formatTime(mem.created_at) }}</span>
+                        
+                        <div v-for="mem in filteredMemories" :key="mem.id" @click="toggleSelection(mem.id)" 
+                             class="bg-white/80 p-4 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border transition-all flex items-center"
+                             :class="[isManageMode ? 'cursor-pointer hover:bg-gray-50' : '', (isManageMode && selectedMemoryIds.includes(mem.id)) ? 'border-primary bg-red-50' : 'border-white']">
+                            
+                            <div v-if="isManageMode" class="mr-4 shrink-0">
+                                <input type="checkbox" class="custom-checkbox pointer-events-none" :checked="selectedMemoryIds.includes(mem.id)">
                             </div>
-                            <h3 class="font-bold text-gray-800 text-[15px] mb-1.5">{{ mem.title }}</h3>
-                            <p class="text-[13px] text-gray-600 leading-relaxed">{{ mem.content }}</p>
+                            
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between items-center mb-2">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-lg">{{ mem.category || '未分类' }}</span>
+                                        <span v-if="mem._isDuplicate" class="text-[10px] font-bold text-red-500 px-2 py-0.5 border border-red-200 rounded-lg bg-white">🤖 建议清理</span>
+                                    </div>
+                                    <span class="text-[10px] text-gray-400 shrink-0 ml-2">{{ formatTime(mem.created_at) }}</span>
+                                </div>
+                                <h3 class="font-bold text-gray-800 text-[15px] mb-1.5 truncate">{{ mem.title }}</h3>
+                                <p class="text-[13px] text-gray-600 leading-relaxed line-clamp-3">{{ mem.content }}</p>
+                            </div>
                         </div>
                     </div>
+
+                    <transition name="fade">
+                        <div v-if="isManageMode" class="absolute bottom-0 left-0 w-full bg-white border-t border-gray-100 p-4 pb-safe flex justify-between items-center z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] rounded-t-3xl">
+                            <button @click="toggleManageMode" class="px-5 py-2.5 rounded-xl text-gray-500 font-bold bg-gray-100 hover:bg-gray-200 transition-colors">取消</button>
+                            <button @click="deleteSelected" :disabled="selectedMemoryIds.length === 0" 
+                                class="px-5 py-2.5 rounded-xl font-bold transition-all shadow-md flex items-center"
+                                :class="selectedMemoryIds.length > 0 ? 'bg-primary text-white active:scale-95' : 'bg-gray-300 text-gray-100 cursor-not-allowed'">
+                                🗑️ 删除所选 <span class="ml-1 bg-white/20 px-2 rounded-md">{{ selectedMemoryIds.length }}</span>
+                            </button>
+                        </div>
+                    </transition>
                 </div>
 
                 <div v-else-if="currentTab === 'dashboard'" class="h-full flex flex-col absolute inset-0 pb-safe">
@@ -202,7 +222,6 @@
             const isAuthenticated = ref(!!savedSecret)
             const apiSecret = ref(savedSecret || '')
 
-            // 默认打开宠物页
             const currentTab = ref('pet')
             const isMenuOpen = ref(false)
             
@@ -221,10 +240,10 @@
                 interactPet('get')
             }
 
-            // --- 宠物模块 (像素风格) ---
+            // --- 宠物模块 ---
             const petStatusMsg = ref('>>> SYSTEM BOOTING...\n>>> WAITING FOR CONNECTION...')
             const interactPet = async (actionStr) => {
-                tg.HapticFeedback.impactOccurred('medium'); // 手机震动反馈
+                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
                 petStatusMsg.value = `>>> EXECUTING [${actionStr.toUpperCase()}]...\n>>> PLEASE WAIT...`
                 try {
                     const res = await fetch(`${API_BASE_URL}/api/pet`, {
@@ -236,24 +255,30 @@
                 } catch (e) { petStatusMsg.value = '>>> ERR: CONNECTION FAILED' }
             }
 
-            // --- 记忆库模块 (带高级筛选) ---
+            // --- 记忆库模块与去重管理 ---
             const memoryList = ref([])
             const filterCat = ref('全部')
-            const filterTime = ref('all') // all, week, month
+            const filterTime = ref('all')
+            
+            // 管理模式状态
+            const isManageMode = ref(false)
+            const selectedMemoryIds = ref([])
 
             const loadMemories = async () => {
                 try {
                     const res = await fetch(`${API_BASE_URL}/api/memories/all`, { headers: { 'Authorization': `Bearer ${apiSecret.value}` } })
-                    if (res.ok) memoryList.value = await res.json()
+                    if (res.ok) {
+                        const data = await res.json()
+                        // 初始化时清除高亮标记
+                        memoryList.value = data.map(m => ({...m, _isDuplicate: false}))
+                    }
                 } catch (e) { console.error(e) }
             }
 
             const filteredMemories = computed(() => {
                 const now = new Date()
                 return memoryList.value.filter(mem => {
-                    // 分类筛选
                     if (filterCat.value !== '全部' && mem.category !== filterCat.value) return false
-                    // 时间筛选
                     if (filterTime.value !== 'all') {
                         const mDate = new Date(mem.created_at)
                         const diffDays = (now - mDate) / (1000 * 60 * 60 * 24)
@@ -269,6 +294,103 @@
                 return `${d.getMonth()+1}-${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`
             }
 
+            // 开关管理模式
+            const toggleManageMode = () => {
+                isManageMode.value = !isManageMode.value
+                if (!isManageMode.value) {
+                    selectedMemoryIds.value = [] // 退出时清空选择
+                    memoryList.value.forEach(m => m._isDuplicate = false) // 清楚查重标签
+                }
+            }
+
+            // 手动单选
+            const toggleSelection = (id) => {
+                if (!isManageMode.value) return
+                const idx = selectedMemoryIds.value.indexOf(id)
+                if (idx > -1) selectedMemoryIds.value.splice(idx, 1)
+                else selectedMemoryIds.value.push(id)
+            }
+
+            // 文本相似度计算引擎 (Bigram Jaccard)
+            const getBigrams = (str) => {
+                const bigrams = new Set();
+                for (let i = 0; i < str.length - 1; i++) bigrams.add(str.substring(i, i + 2));
+                return bigrams;
+            }
+            const calculateSimilarity = (s1, s2) => {
+                if (s1 === s2) return 1;
+                if (s1.length < 2 || s2.length < 2) return s1 === s2 ? 1 : 0;
+                const bg1 = getBigrams(s1), bg2 = getBigrams(s2);
+                let intersection = 0;
+                for (let bg of bg1) if (bg2.has(bg)) intersection++;
+                return intersection / (bg1.size + bg2.size - intersection);
+            }
+
+            // 一键智能查重
+            const autoSelectDuplicates = () => {
+                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+                selectedMemoryIds.value = [];
+                const toDelete = new Set();
+                const mems = memoryList.value; // 数据默认是由新到旧排序的
+                
+                // 清理旧标记
+                mems.forEach(m => m._isDuplicate = false);
+
+                for (let i = 0; i < mems.length; i++) {
+                    if (toDelete.has(mems[i].id)) continue;
+                    for (let j = i + 1; j < mems.length; j++) {
+                        if (toDelete.has(mems[j].id) || mems[i].category !== mems[j].category) continue;
+                        
+                        // 相似度阈值 75%
+                        const sim = calculateSimilarity(mems[i].content || '', mems[j].content || '');
+                        if (sim > 0.75) {
+                            toDelete.add(mems[j].id); // 数组靠后的较旧，标记旧的删除
+                            mems[j]._isDuplicate = true; // UI 红标高亮
+                        }
+                    }
+                }
+                
+                selectedMemoryIds.value = Array.from(toDelete);
+                
+                if (toDelete.size === 0) {
+                    if (tg.showAlert) tg.showAlert('没有发现高度相似的冗余记忆哦~');
+                    else alert('没有发现高度相似的冗余记忆哦~');
+                } else {
+                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                }
+            }
+
+            // 执行物理删除
+            const deleteSelected = async () => {
+                if (selectedMemoryIds.value.length === 0) return;
+                
+                const confirmMsg = `确定要彻底删除这 ${selectedMemoryIds.value.length} 条记忆吗？此操作无法恢复。`;
+                
+                // 兼容 TG 原生弹窗与普通 Web 弹窗
+                const executeDelete = async () => {
+                    try {
+                        const res = await fetch(`${API_BASE_URL}/api/memories/delete`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiSecret.value}` },
+                            body: JSON.stringify({ ids: selectedMemoryIds.value })
+                        });
+                        if (res.ok) {
+                            toggleManageMode(); // 退出管理模式
+                            loadMemories(); // 刷新列表
+                            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                        }
+                    } catch (e) {
+                        console.error('删除失败', e);
+                    }
+                };
+
+                if (tg.showConfirm) {
+                    tg.showConfirm(confirmMsg, (sure) => { if (sure) executeDelete(); });
+                } else {
+                    if (confirm(confirmMsg)) executeDelete();
+                }
+            }
+
             // --- 控制台模块 ---
             const dashData = ref({ location: '加载中...', battery: '加载中...', expense: '0', records: [] })
             const loadDashData = async () => {
@@ -279,6 +401,11 @@
             }
 
             const switchTab = (key) => {
+                // 如果正在管理模式，阻止切换并给提示
+                if (isManageMode.value) {
+                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+                    return;
+                }
                 currentTab.value = key; setTimeout(() => { isMenuOpen.value = false }, 50)
                 if (key === 'memory' && memoryList.value.length === 0) loadMemories()
                 if (key === 'dashboard') loadDashData()
@@ -291,6 +418,7 @@
                 isAuthenticated, inputSecret, verifySecret,
                 currentTab, isMenuOpen, tabs, switchTab,
                 memoryList, filterCat, filterTime, filteredMemories, formatTime,
+                isManageMode, selectedMemoryIds, toggleManageMode, toggleSelection, autoSelectDuplicates, deleteSelected,
                 interactPet, petStatusMsg, dashData
             }
         }
