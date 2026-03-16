@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: { extend: { colors: { primary: '#f43f5e', secondary: '#fb7185', bglight: '#fff1f2' } } }
@@ -18,10 +18,30 @@
         .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-        .markdown-body p { margin-bottom: 0.5em; }
-        .think-box { font-size: 0.8rem; color: #6b7280; background: rgba(255,255,255,0.5); padding: 8px; border-radius: 8px; border: 1px dashed #d1d5db; margin-bottom: 8px; cursor: pointer; }
-        /* 适配 TG 主题色 */
         body { background-color: var(--tg-theme-bg-color, #fff1f2); color: var(--tg-theme-text-color, #1f2937); }
+        
+        /* 像素风游戏 UI 专属样式 */
+        .pixel-font { font-family: 'DotGothic16', monospace; }
+        .pixel-box {
+            border: 4px solid #374151; /* 深灰硬边框 */
+            box-shadow: 4px 4px 0px #9ca3af;
+            background-color: #f3f4f6;
+        }
+        .pixel-btn {
+            border: 3px solid #1f2937;
+            background-color: white;
+            box-shadow: 3px 3px 0px #1f2937;
+            transition: all 0.1s;
+        }
+        .pixel-btn:active {
+            transform: translate(3px, 3px);
+            box-shadow: 0px 0px 0px #1f2937;
+        }
+        .pixel-screen {
+            background-color: #c2d5aa; /* 复古 Gameboy 屏幕绿 */
+            border: inset 4px #9ca3af;
+            color: #111827;
+        }
     </style>
 </head>
 <body class="h-screen w-screen overflow-hidden font-sans selection:bg-primary selection:text-white">
@@ -31,11 +51,10 @@
     <transition name="fade">
         <div v-if="!isAuthenticated" class="absolute inset-0 z-[100] bg-white/90 backdrop-blur flex flex-col items-center justify-center p-6">
             <div class="w-24 h-24 bg-white rounded-full shadow-lg flex items-center justify-center mb-8 border-4 border-white text-4xl">🔐</div>
-            <h2 class="text-xl font-bold mb-2">身份核验</h2>
-            <p class="text-sm text-gray-500 mb-8 text-center">请输入专属暗号连接大脑</p>
-            <div class="w-full max-w-sm space-y-4">
-                <input v-model="inputSecret" type="password" placeholder="API_SECRET..." class="w-full bg-white/80 h-12 rounded-2xl px-5 outline-none focus:ring-2 focus:ring-primary/50 text-gray-700 shadow-sm border border-gray-100 text-center tracking-widest">
-                <button @click="verifySecret" class="w-full h-12 bg-primary text-white rounded-2xl font-bold shadow-md active:scale-95 transition-all">连接</button>
+            <h2 class="text-xl font-bold mb-2">连接专属终端</h2>
+            <div class="w-full max-w-sm space-y-4 mt-6">
+                <input v-model="inputSecret" type="password" placeholder="输入密钥..." class="w-full bg-white h-12 rounded-2xl px-5 outline-none focus:ring-2 focus:ring-primary/50 shadow-sm border border-gray-100 text-center tracking-widest">
+                <button @click="verifySecret" class="w-full h-12 bg-primary text-white rounded-2xl font-bold shadow-md active:scale-95 transition-all">激活</button>
             </div>
         </div>
     </transition>
@@ -43,7 +62,7 @@
     <template v-if="isAuthenticated">
         <header class="h-14 flex items-center px-4 shrink-0 z-20 relative bg-white/40 backdrop-blur-sm border-b border-white/50">
             <button @click="isMenuOpen = true" class="p-2 -ml-2 text-gray-600 hover:text-primary transition-colors active:scale-95">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="15" y2="18"></line></svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="15" y2="18"></line></svg>
             </button>
             <h1 class="ml-3 text-base font-semibold tracking-wide text-gray-800">{{ tabs[currentTab].title }}</h1>
         </header>
@@ -52,9 +71,7 @@
             <div v-if="isMenuOpen" @click="isMenuOpen = false" class="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-40"></div>
         </transition>
         <aside :class="isMenuOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed top-0 left-0 h-full w-64 bg-white/95 backdrop-blur-xl shadow-2xl z-50 transition-transform duration-300 ease-out flex flex-col">
-            <div class="h-14 flex items-center px-4 border-b border-gray-100 shrink-0">
-                <span class="ml-3 font-semibold text-gray-800">系统菜单</span>
-            </div>
+            <div class="h-14 flex items-center px-4 border-b border-gray-100 shrink-0"><span class="ml-3 font-semibold text-gray-800">模块切换</span></div>
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
                 <button v-for="(tab, key) in tabs" :key="key" @click="switchTab(key)" :class="currentTab === key ? 'bg-primary/10 text-primary font-bold' : 'text-gray-500 hover:bg-gray-50 font-medium'" class="w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl transition-all">
                     <div v-html="tab.svg" class="w-5 h-5"></div>
@@ -65,73 +82,99 @@
 
         <main class="flex-1 relative w-full h-full">
             <transition name="fade" mode="out-in">
-                
-                <div v-if="currentTab === 'chat'" class="h-full flex flex-col absolute inset-0">
-                    <div class="flex-1 overflow-y-auto p-4 space-y-6 pb-24" id="chat-container">
-                        <div v-for="(msg, index) in chatList" :key="index">
-                            <div v-if="msg.role === 'assistant'" class="flex items-start">
-                                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-secondary to-primary text-white flex items-center justify-center mr-3 shrink-0 shadow-md">🤖</div>
-                                <div class="max-w-[75%]">
-                                    <div v-if="msg.reasoning" class="think-box" @click="msg.showReasoning = !msg.showReasoning">💭 思考过程</div>
-                                    <div class="bg-white p-3.5 rounded-2xl rounded-tl-sm shadow-sm text-gray-700 text-[15px] leading-relaxed markdown-body" v-html="renderMarkdown(msg.content)"></div>
-                                </div>
-                            </div>
-                            <div v-else class="flex items-end justify-end">
-                                <div class="bg-primary text-white p-3.5 rounded-2xl rounded-tr-sm shadow-md max-w-[75%] text-[15px] leading-relaxed whitespace-pre-wrap">{{ msg.content }}</div>
-                            </div>
+
+                <div v-if="currentTab === 'pet'" class="h-full flex flex-col items-center justify-center absolute inset-0 p-5 pb-safe pixel-font bg-[#ffe4e6]">
+                    
+                    <div class="w-full max-w-sm pixel-box pixel-screen p-4 mb-6 relative">
+                        <div class="text-center text-4xl mb-4 mt-2">🐣</div>
+                        <div class="h-24 overflow-y-auto text-sm leading-relaxed border-t-2 border-dashed border-gray-500 pt-2">
+                            <p class="whitespace-pre-wrap">{{ petStatusMsg }}</p>
                         </div>
-                        <div v-if="isTyping" class="flex items-center ml-12 text-sm text-gray-400">正在输入... ✨</div>
+                        <div class="absolute top-2 right-2 flex space-x-1">
+                            <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                        </div>
                     </div>
-                    <div class="absolute bottom-0 left-0 w-full bg-white/80 backdrop-blur-xl border-t border-gray-100 p-3 pb-safe z-20 flex items-center space-x-2">
-                        <input v-model="inputText" @keyup.enter="sendMessage" type="text" placeholder="发消息..." class="flex-1 bg-gray-100/80 h-10 rounded-full px-4 text-[15px] outline-none focus:ring-2 focus:ring-primary/30 text-gray-700">
-                        <button @click="sendMessage" :disabled="isTyping || !inputText.trim()" class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white shrink-0 shadow-md">⬆️</button>
+                    
+                    <div class="grid grid-cols-3 gap-4 w-full max-w-sm mt-2">
+                        <button @click="interactPet('feed')" class="pixel-btn p-3 flex flex-col items-center justify-center font-bold text-gray-700">
+                            <span class="text-2xl mb-1">🍙</span><span>FEED</span>
+                        </button>
+                        <button @click="interactPet('clean')" class="pixel-btn p-3 flex flex-col items-center justify-center font-bold text-gray-700">
+                            <span class="text-2xl mb-1">🚿</span><span>CLEAN</span>
+                        </button>
+                        <button @click="interactPet('play')" class="pixel-btn p-3 flex flex-col items-center justify-center font-bold text-gray-700">
+                            <span class="text-2xl mb-1">🎮</span><span>PLAY</span>
+                        </button>
                     </div>
                 </div>
 
                 <div v-else-if="currentTab === 'memory'" class="h-full flex flex-col absolute inset-0 pb-safe">
+                    <div class="px-4 pt-3 pb-2 bg-white/60 backdrop-blur-md shadow-sm shrink-0 z-10">
+                        <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+                            <button v-for="cat in ['全部', '情感', '记事', '灵感', '流水', '画像']" @click="filterCat = cat"
+                                :class="filterCat === cat ? 'bg-primary text-white' : 'bg-white text-gray-500 border border-gray-100'"
+                                class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-sm transition-colors">{{ cat }}</button>
+                        </div>
+                        <div class="flex justify-between items-center mt-1">
+                            <select v-model="filterTime" class="bg-transparent text-xs text-gray-600 font-medium outline-none">
+                                <option value="all">全部时间</option>
+                                <option value="week">最近一周</option>
+                                <option value="month">最近一月</option>
+                            </select>
+                            <span class="text-xs text-gray-400 font-medium">共 {{ filteredMemories.length }} 条</span>
+                        </div>
+                    </div>
+
                     <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                        <div v-for="mem in memoryList" :key="mem.id" class="bg-white/80 p-4 rounded-3xl shadow-sm">
-                            <span class="text-xs font-bold text-primary px-2 py-0.5 bg-primary/10 rounded">{{ mem.category || '未分类' }}</span>
-                            <h3 class="font-bold text-gray-800 mt-2 mb-1.5">{{ mem.title }}</h3>
-                            <p class="text-[14px] text-gray-600">{{ mem.content }}</p>
+                        <div v-if="filteredMemories.length === 0" class="text-center text-gray-400 mt-10 text-sm">暂无符合条件的记忆哦~</div>
+                        <div v-for="mem in filteredMemories" :key="mem.id" class="bg-white/80 p-4 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-white">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-lg">{{ mem.category || '未分类' }}</span>
+                                <span class="text-[10px] text-gray-400">{{ formatTime(mem.created_at) }}</span>
+                            </div>
+                            <h3 class="font-bold text-gray-800 text-[15px] mb-1.5">{{ mem.title }}</h3>
+                            <p class="text-[13px] text-gray-600 leading-relaxed">{{ mem.content }}</p>
                         </div>
                     </div>
                 </div>
 
-                <div v-else-if="currentTab === 'pet'" class="h-full flex flex-col items-center justify-center absolute inset-0 p-4 pb-safe">
-                    <div class="w-56 h-56 bg-white/60 backdrop-blur rounded-full shadow-lg flex items-center justify-center text-6xl relative mb-8 border-4 border-white">
-                        🐣
-                    </div>
-                    
-                    <div class="flex space-x-4 w-full max-w-xs justify-center mt-6">
-                        <button @click="interactPet('feed')" class="bg-white px-5 py-3.5 rounded-2xl shadow-sm text-gray-600 hover:text-primary transition-all flex flex-col items-center">
-                            <span class="text-2xl mb-1">🍚</span><span class="text-xs font-medium">喂食</span>
-                        </button>
-                        <button @click="interactPet('clean')" class="bg-white px-5 py-3.5 rounded-2xl shadow-sm text-gray-600 hover:text-primary transition-all flex flex-col items-center">
-                            <span class="text-2xl mb-1">🛁</span><span class="text-xs font-medium">洗澡</span>
-                        </button>
-                        <button @click="interactPet('play')" class="bg-white px-5 py-3.5 rounded-2xl shadow-sm text-gray-600 hover:text-primary transition-all flex flex-col items-center">
-                            <span class="text-2xl mb-1">🎾</span><span class="text-xs font-medium">陪玩</span>
-                        </button>
-                    </div>
-                    <p class="mt-6 text-sm text-gray-500 text-center max-w-xs">{{ petStatusMsg }}</p>
-                </div>
+                <div v-else-if="currentTab === 'dashboard'" class="h-full flex flex-col absolute inset-0 pb-safe">
+                    <div class="flex-1 overflow-y-auto p-4">
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="bg-white/90 p-4 rounded-3xl shadow-sm border border-white">
+                                <div class="text-2xl mb-1">🔋</div>
+                                <h3 class="text-xs text-gray-400 font-medium">设备状态</h3>
+                                <p class="font-bold text-gray-700 mt-0.5 truncate">{{ dashData.battery }}</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-primary to-secondary p-4 rounded-3xl shadow-md text-white">
+                                <div class="text-2xl mb-1">💰</div>
+                                <h3 class="text-xs text-white/80 font-medium">本月开销总计</h3>
+                                <p class="font-bold text-lg mt-0.5">¥ {{ dashData.expense }}</p>
+                            </div>
+                            <div class="col-span-2 bg-white/90 p-4 rounded-3xl shadow-sm border border-white flex items-center justify-between">
+                                <div class="w-full pr-2">
+                                    <div class="text-xs text-gray-400 font-medium mb-1 flex items-center">📍 查岗定位</div>
+                                    <p class="font-bold text-gray-700 text-sm leading-snug">{{ dashData.location }}</p>
+                                </div>
+                            </div>
+                        </div>
 
-                <div v-else-if="currentTab === 'dashboard'" class="h-full overflow-y-auto p-4 absolute inset-0 pb-safe">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-white/80 p-4.5 rounded-3xl shadow-sm border border-white">
-                            <div class="text-2xl mb-1">🔋</div>
-                            <h3 class="text-xs text-gray-400 font-medium">设备状态</h3>
-                            <p class="font-bold text-gray-700 mt-0.5">{{ dashData.battery }}</p>
-                        </div>
-                        <div class="bg-white/80 p-4.5 rounded-3xl shadow-sm border border-white">
-                            <div class="text-2xl mb-1">💰</div>
-                            <h3 class="text-xs text-gray-400 font-medium">本月开销</h3>
-                            <p class="font-bold text-gray-700 mt-0.5">¥ {{ dashData.expense }}</p>
-                        </div>
-                        <div class="col-span-2 bg-white/80 p-5 rounded-3xl shadow-sm border border-white">
-                            <div class="text-xs text-gray-400 font-medium mb-1">📍 查岗定位</div>
-                            <p class="font-bold text-gray-700 leading-tight">{{ dashData.location }}</p>
+                        <h3 class="text-sm font-bold text-gray-800 mb-3 px-1">💸 本月开销明细</h3>
+                        <div class="bg-white/80 rounded-3xl shadow-sm border border-white overflow-hidden p-2">
+                            <div v-if="dashData.records.length === 0" class="text-center text-gray-400 text-xs py-6">本月还没有记账哦</div>
+                            <div v-for="(rec, idx) in dashData.records" :key="idx" class="flex items-center justify-between p-3 border-b border-gray-50 last:border-0">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs shadow-inner">
+                                        {{ rec.type === '餐饮' ? '🍔' : (rec.type === '购物' ? '🛍️' : '💳') }}
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-gray-700">{{ rec.item }}</p>
+                                        <p class="text-[10px] text-gray-400">{{ rec.date }} | {{ rec.type }}</p>
+                                    </div>
+                                </div>
+                                <span class="font-bold text-gray-800 text-sm">-{{ rec.amount }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -142,87 +185,62 @@
 </div>
 
 <script>
-    const { createApp, ref, nextTick, onMounted } = Vue
+    const { createApp, ref, computed, onMounted } = Vue
 
     // ==========================================
-    // ⚠️ 填入你后端的 Render 地址 (末尾不带斜杠)
+    // ⚠️ 填入你的 Render 网址
     // ==========================================
     const API_BASE_URL = 'https://mcp-gateway-w9yh.onrender.com';
 
     createApp({
         setup() {
-            // 初始化 TG WebApp
             const tg = window.Telegram.WebApp;
-            tg.expand(); // 默认全屏展开
+            tg.expand(); 
 
             const inputSecret = ref('')
             const savedSecret = localStorage.getItem('space_api_secret')
             const isAuthenticated = ref(!!savedSecret)
             const apiSecret = ref(savedSecret || '')
 
-            const currentTab = ref('chat')
+            // 默认打开宠物页
+            const currentTab = ref('pet')
             const isMenuOpen = ref(false)
             
             const tabs = {
-                chat: { name: '陪伴空间', title: '陪伴空间', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>' },
-                memory: { name: '记忆星空', title: '记忆星空', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>' },
-                pet: { name: '宠物屋', title: '电子宠物屋', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>' },
-                dashboard: { name: '控制台', title: '小管家控制台', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>' }
+                pet: { name: '像素宠物屋', title: 'TAMAGOTCHI', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>' },
+                memory: { name: '记忆星空', title: '我们的记忆', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>' },
+                dashboard: { name: '管家控制台', title: '状态控制台', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>' }
             }
 
-            // 鉴权
             const verifySecret = () => {
                 if (!inputSecret.value.trim()) return
                 const secret = inputSecret.value.trim()
                 localStorage.setItem('space_api_secret', secret)
                 apiSecret.value = secret
                 isAuthenticated.value = true
-                loadDashData(); // 登录后顺便拉取一下数据
+                interactPet('get')
             }
 
-            // --- 模块 1: 聊天室 ---
-            const inputText = ref('')
-            const isTyping = ref(false)
-            const chatList = ref([{ role: 'assistant', content: '宝宝，打开小程序啦！有什么吩咐？', reasoning: '', showReasoning: false }])
-
-            const scrollToBottom = async () => {
-                await nextTick(); const c = document.getElementById('chat-container'); if (c) c.scrollTop = c.scrollHeight;
-            }
-
-            const sendMessage = async () => {
-                if (!inputText.value.trim() || isTyping.value) return
-                chatList.value.push({ role: 'user', content: inputText.value.trim() }); inputText.value = ''; isTyping.value = true; scrollToBottom()
-                chatList.value.push({ role: 'assistant', content: '', reasoning: '', showReasoning: false })
-                const currentIndex = chatList.value.length - 1
-
+            // --- 宠物模块 (像素风格) ---
+            const petStatusMsg = ref('>>> SYSTEM BOOTING...\n>>> WAITING FOR CONNECTION...')
+            const interactPet = async (actionStr) => {
+                tg.HapticFeedback.impactOccurred('medium'); // 手机震动反馈
+                petStatusMsg.value = `>>> EXECUTING [${actionStr.toUpperCase()}]...\n>>> PLEASE WAIT...`
                 try {
-                    const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
+                    const res = await fetch(`${API_BASE_URL}/api/pet`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiSecret.value}` },
-                        body: JSON.stringify({ messages: chatList.value.slice(0, -1).map(m => ({ role: m.role, content: m.content })), stream: true })
+                        body: JSON.stringify({ action: actionStr })
                     })
-                    const reader = response.body.getReader(); const decoder = new TextDecoder('utf-8'); let buffer = ''; let inThink = false
-                    while (true) {
-                        const { done, value } = await reader.read()
-                        if (done) break
-                        buffer += decoder.decode(value, { stream: true }); const lines = buffer.split('\n'); buffer = lines.pop()
-                        for (const line of lines) {
-                            if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-                                try {
-                                    const delta = JSON.parse(line.slice(6)).choices[0].delta?.content || ''
-                                    if (delta.includes('<think>')) { inThink = true; continue; }
-                                    if (delta.includes('</think>')) { inThink = false; continue; }
-                                    inThink ? chatList.value[currentIndex].reasoning += delta : chatList.value[currentIndex].content += delta
-                                    scrollToBottom()
-                                } catch (e) {}
-                            }
-                        }
-                    }
-                } catch (error) { chatList.value[currentIndex].content = `⚠️ 掉线了: ${error.message}` } 
-                finally { isTyping.value = false; scrollToBottom() }
+                    const data = await res.json()
+                    petStatusMsg.value = `>>> SYS_RESPONSE:\n${data.message || 'SUCCESS!'}`
+                } catch (e) { petStatusMsg.value = '>>> ERR: CONNECTION FAILED' }
             }
 
-            // --- 模块 2: 记忆库 ---
+            // --- 记忆库模块 (带高级筛选) ---
             const memoryList = ref([])
+            const filterCat = ref('全部')
+            const filterTime = ref('all') // all, week, month
+
             const loadMemories = async () => {
                 try {
                     const res = await fetch(`${API_BASE_URL}/api/memories/all`, { headers: { 'Authorization': `Bearer ${apiSecret.value}` } })
@@ -230,23 +248,29 @@
                 } catch (e) { console.error(e) }
             }
 
-            // --- 模块 3: 宠物屋 ---
-            const petStatusMsg = ref('加载中...')
-            const interactPet = async (actionStr) => {
-                tg.HapticFeedback.impactOccurred('medium'); // 调用 TG 原生手机震动反馈
-                petStatusMsg.value = '正在操作...'
-                try {
-                    const res = await fetch(`${API_BASE_URL}/api/pet`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiSecret.value}` },
-                        body: JSON.stringify({ action: actionStr })
-                    })
-                    const data = await res.json()
-                    petStatusMsg.value = data.message || '操作成功！'
-                } catch (e) { petStatusMsg.value = '连接失败' }
+            const filteredMemories = computed(() => {
+                const now = new Date()
+                return memoryList.value.filter(mem => {
+                    // 分类筛选
+                    if (filterCat.value !== '全部' && mem.category !== filterCat.value) return false
+                    // 时间筛选
+                    if (filterTime.value !== 'all') {
+                        const mDate = new Date(mem.created_at)
+                        const diffDays = (now - mDate) / (1000 * 60 * 60 * 24)
+                        if (filterTime.value === 'week' && diffDays > 7) return false
+                        if (filterTime.value === 'month' && diffDays > 30) return false
+                    }
+                    return true
+                })
+            })
+
+            const formatTime = (iso) => {
+                if(!iso) return ''; const d = new Date(iso);
+                return `${d.getMonth()+1}-${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`
             }
 
-            // --- 模块 4: 控制台 ---
-            const dashData = ref({ location: '加载中...', battery: '加载中...', expense: '0' })
+            // --- 控制台模块 ---
+            const dashData = ref({ location: '加载中...', battery: '加载中...', expense: '0', records: [] })
             const loadDashData = async () => {
                 try {
                     const res = await fetch(`${API_BASE_URL}/api/dashboard`, { headers: { 'Authorization': `Bearer ${apiSecret.value}` } })
@@ -258,16 +282,16 @@
                 currentTab.value = key; setTimeout(() => { isMenuOpen.value = false }, 50)
                 if (key === 'memory' && memoryList.value.length === 0) loadMemories()
                 if (key === 'dashboard') loadDashData()
-                if (key === 'pet') interactPet('get') // 点击宠物页拉取一次状态
+                if (key === 'pet' && petStatusMsg.value.includes('WAITING')) interactPet('get')
             }
 
-            onMounted(() => { if (isAuthenticated.value) { scrollToBottom(); loadDashData(); } })
+            onMounted(() => { if (isAuthenticated.value) interactPet('get') })
 
             return {
                 isAuthenticated, inputSecret, verifySecret,
                 currentTab, isMenuOpen, tabs, switchTab,
-                inputText, isTyping, chatList, sendMessage, renderMarkdown: t => marked.parse(t||''),
-                memoryList, interactPet, petStatusMsg, dashData
+                memoryList, filterCat, filterTime, filteredMemories, formatTime,
+                interactPet, petStatusMsg, dashData
             }
         }
     }).mount('#app')
