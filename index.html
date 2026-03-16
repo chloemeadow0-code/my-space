@@ -344,23 +344,28 @@
                 
                 const executeDelete = async () => {
                     try {
-                        if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+                        if (tg.platform !== 'unknown' && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
                         const res = await fetch(`${API_BASE_URL}/api/memories/delete`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiSecret.value}` },
                             body: JSON.stringify({ ids: selectedIds.value })
                         });
                         if(res.ok) {
+                            alert(`✅ 成功清除 ${selectedIds.value.length} 条记忆！`);
                             selectedIds.value = [];
                             isManageMode.value = false;
                             loadMemories(); // 重新拉取最新数据
+                        } else {
+                            alert(`❌ 删除失败，服务器状态码: ${res.status}`);
                         }
                     } catch(e) {
-                        if(tg.showAlert) tg.showAlert('网络请求失败，请稍后再试。');
+                        alert(`❌ 网络请求失败: ${e.message}`);
                     }
                 }
 
-                if(tg.showConfirm) {
+                // 核心修复：判断是否在真实的 Telegram App 环境内。
+                // 如果是“添加到主屏幕”的浏览器网页，tg.platform 会是 'unknown'，此时 TG 弹窗会失效，必须强行拦截并使用原生 confirm
+                if (tg.platform !== 'unknown' && tg.showConfirm) {
                     tg.showConfirm(`危险操作：确定要永久清除这 ${selectedIds.value.length} 条记忆吗？`, (confirmed) => {
                         if(confirmed) executeDelete();
                     });
